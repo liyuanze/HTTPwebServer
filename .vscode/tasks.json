@@ -1,0 +1,25 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "cppbuild",                       //编译类型
+			"label": "C/C++: g++ build active file",  //标签，用于区分不同任务
+			"command": "/usr/bin/g++",                //编译命令
+			"args": [                                 //参数
+				"-g",
+				"${file}",                            //表示当前项目中的所有活动文件
+				"-o",
+				"${fileDirname}/${fileBasenameNoExtension}",  //表示在当前项目文件夹下生成与活动文件同名但没有扩展名的可执行文件
+                "-lpthread"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [
+				"$gcc"
+			],
+			"group": "build",
+			"detail": "compiler: /usr/bin/g++"
+		}
+	]
+}

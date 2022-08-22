@@ -1,0 +1,2 @@
+/usr/bin/ar qc liblibconnection.a CMakeFiles/libconnection.dir/connection.cpp.o
+/usr/bin/ranlib liblibconnection.a

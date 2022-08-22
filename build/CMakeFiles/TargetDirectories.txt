@@ -1,0 +1,9 @@
+/home/xftank/Desktop/myTinyWebServer/build/CMakeFiles/rebuild_cache.dir
+/home/xftank/Desktop/myTinyWebServer/build/CMakeFiles/HTTPserver.dir
+/home/xftank/Desktop/myTinyWebServer/build/CMakeFiles/edit_cache.dir
+/home/xftank/Desktop/myTinyWebServer/build/connection/CMakeFiles/rebuild_cache.dir
+/home/xftank/Desktop/myTinyWebServer/build/connection/CMakeFiles/libconnection.dir
+/home/xftank/Desktop/myTinyWebServer/build/connection/CMakeFiles/edit_cache.dir
+/home/xftank/Desktop/myTinyWebServer/build/threadPool/CMakeFiles/rebuild_cache.dir
+/home/xftank/Desktop/myTinyWebServer/build/threadPool/CMakeFiles/libthreadpool.dir
+/home/xftank/Desktop/myTinyWebServer/build/threadPool/CMakeFiles/edit_cache.dir
