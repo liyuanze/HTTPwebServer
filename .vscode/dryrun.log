@@ -1,6 +1,0 @@
-make --dry-run --always-make --keep-going --print-directory
-make: Entering directory '/home/xftank/Desktop/myTinyWebServer'
-mkdir -p bin
-cd build && make
-make: Leaving directory '/home/xftank/Desktop/myTinyWebServer'
- 
