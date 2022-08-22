@@ -37,7 +37,6 @@ Connection::Connection(int sockFd) {
 }
 
 void Connection::_init() {
-    _keepAlive = true;
     _writeBufBegin = 0;
     _writeBuffEnd = 0;
     _readBuffEnd = 0;
@@ -81,6 +80,7 @@ int Connection::readOnce() {
  */
 int Connection::writeOnce() {
     size_t all = _iov[0].iov_len + _iov[1].iov_len;
+    printf("writeOnce:%d %d\n", _iov[0].iov_len, _iov[1].iov_len);
     do
     {
         int ret = writev(_fd, _iov, 2);
@@ -106,6 +106,7 @@ int Connection::writeOnce() {
         if(0 == _iov[0].iov_len + _iov[1].iov_len) {
             return  1;
         }
+        printf("%d\n", _iov[0].iov_len + _iov[1].iov_len);
     } while (true);
     
 }
@@ -275,7 +276,7 @@ Connection::HTTP_CODE Connection::_parseRequestLine(char* line) {
     return HTTP_CODE::NO_REQUEST;
 }
 /**
- * @description: 暂时不考虑value有多行的可能性了😅
+ * @description: 解析header
  * @param {char *} line
  * @return NO_REQUEST or GET_REQUEST or BAD_REQUEST
  */
@@ -289,23 +290,29 @@ Connection::HTTP_CODE Connection::_parseHeader(char * line) {
         _checkState = CHECK_STATE::CHECK_BODY;
         return HTTP_CODE::NO_REQUEST;
     }
-    //TODO: 解析header没做
-    return HTTP_CODE::NO_REQUEST;
-    char key[35];
-    char value[35];
-    int ret = sscanf(line, "%[-a-zA-Z0-9] : %[-a-zA-Z0-9]", key, value);
-    if(ret != 2) {
-        return HTTP_CODE::BAD_REQUEST;
-    }
-    if(strcmp(key, "Keep-Alive") == 0) {
-        if (strcasecmp(key, "close") == 0)
-        {
-            _keepAlive = false;
+    char key[100];
+    char value[1024];
+    for(size_t i=0;line[i] != '\0';++i) {
+        if(isspace(line[i]) || line[i] == ':') {
+            line [i] = '\0';
+            strcpy(key, line);
+            for(++i; line[i] != '\0' && !isgraph(line[i]); ++i) {}
+            strcpy(value, line + i);
+            break;
         }
     }
-    else if (strcmp(key, "Content-length")) {
+    if(strcasecmp(key, "connection") == 0) {
+        if(strcasecmp(value, "close") == 0) {
+            _keepAlive = false;
+        }
+        else {
+            _keepAlive = true;
+        }
+    }
+    if(strcasecmp(key, "content-length") == 0 && _method == METHOD::POST) {
         _contentLength = atoi(value);
     }
+    //TODO::other headers
     return HTTP_CODE::NO_REQUEST;
 }
 /**
@@ -365,7 +372,7 @@ int Connection::readEvent() {
     }
     HTTP_CODE ret = _readProcess();
     if(ret == HTTP_CODE::NO_REQUEST) {
-        //TODO: _reorganizeBuff();
+        _reorganizeBuff();
         struct epoll_event event;
         event.data.fd = _fd;
         event.events = EPOLLIN | EPOLLRDHUP | EPOLLHUP | EPOLLET | EPOLLONESHOT;
@@ -390,19 +397,45 @@ int Connection::readEvent() {
  */
 int Connection::writeEvent() {
     int ret = writeOnce();
+    printf("writeEvent ret:%d\n", ret);
     if(ret == 1) {
-        _init();
-        return -1;
+        if(_keepAlive) {
+            printf("keepAlive\n");
+            _init();
+            struct epoll_event event;
+            event.data.fd = _fd;
+            event.events = EPOLLIN | EPOLLRDHUP | EPOLLHUP | EPOLLET | EPOLLONESHOT;
+            int ret = epoll_ctl(epollFd, EPOLL_CTL_MOD, _fd, &event);
+            assert(ret != -1);
+            return 1;
+        }
+        else {
+            printf("nonkeepAlive\n");
+            return -1;
+        }
     }
     if(ret == -1) {
         struct epoll_event event;
         event.data.fd = _fd;
         event.events = EPOLLOUT | EPOLLRDHUP | EPOLLHUP | EPOLLET | EPOLLONESHOT;
-        int ret = epoll_ctl(epollFd, EPOLL_CTL_ADD, _fd, &event);
+        int ret = epoll_ctl(epollFd, EPOLL_CTL_MOD, _fd, &event);
         assert(ret != -1);
         return 1;
     }
     if (ret == -2) {
         return -1;
     }
+}
+
+void Connection::_reorganizeBuff() {
+    if(_readBufBegin == 0) return ;
+    if(_readBufBegin >= _readBuffEnd) {
+        _readBufBegin = _readBuffEnd = 0;
+        return ;
+    }
+    for(size_t i = _readBufBegin ;_readBuff[i] != '\0'; ++i) {
+        _readBuff[i - _readBufBegin] = _readBuff[i];
+    }
+    _readBuffEnd -= _readBufBegin;
+    _readBufBegin = 0;
 }

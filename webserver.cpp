@@ -45,7 +45,10 @@ void WebServer::loop() {
             if(fd == _listenFd) {
                 _threadPool.submit(std::bind(&WebServer::_dealListen, this));
             }
-            else if(events & EPOLLHUP) {//两边连接全部关闭（本程序一般不会发生）
+            else if(events & (EPOLLHUP | EPOLLRDHUP)) {
+                _conn.erase(fd);
+                int ret = epoll_ctl(_epollFd, EPOLL_CTL_DEL, fd, NULL);
+                assert(ret != -1);
                 close(fd);
             }
             else if(events & EPOLLIN) {

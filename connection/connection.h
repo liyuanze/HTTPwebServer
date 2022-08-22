@@ -22,6 +22,7 @@
 #include <sys/stat.h> //stat
 #include <fcntl.h> //open...
 #include <sys/epoll.h>
+#include <ctype.h>
 class Connection {
 public:
     enum class CHECK_STATE{
@@ -62,7 +63,7 @@ private:
     HTTP_CODE _checkRequest();
     HTTP_CODE _readProcess();
     void _writeProcess(HTTP_CODE ret);
-    //void _reorganizeBuff();
+    void _reorganizeBuff();
     void _init();
     bool _addResponse(const char* format, ...);
     bool _addStatusLine(HTTP_CODE);
